@@ -331,12 +331,12 @@ export default function AdminPage() {
                                     <select
                                         value={updateUser.field}
                                         onChange={(e) => setUpdateUser({ ...updateUser, field: e.target.value as UpdateField, value: "" })}
-                                        className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-teal-500 transition-all"
+                                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-teal-500 transition-all"
                                         required
                                     >
-                                        <option value="name" className="bg-slate-800">الاسم</option>
-                                        <option value="phone" className="bg-slate-800">رقم الجوال</option>
-                                        <option value="secret" className="bg-slate-800">الكود السري</option>
+                                        <option value="name" className="text-black">الاسم</option>
+                                        <option value="phone" className="text-black">رقم الجوال</option>
+                                        <option value="secret" className="text-black">الكود السري</option>
                                     </select>
                                 </div>
                                 <div>
