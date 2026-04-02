@@ -75,39 +75,14 @@ def reset_user_secret(db: Session, user_code: str, new_secret: str):
     if not user:
         return None
     
-    if user_code == new_secret:
-        return user
-        
-    old_name = user.name
-    old_phone = user.phone
-    old_is_admin = user.is_admin
-    loc_ids = [loc.id for loc in user.locations]
+    # Since ON UPDATE CASCADE is enabled in DB, we can just update the code and hash.
+    # This will automatically propagate to user_locations table.
+    user.code = new_secret
+    user.secret_hash = get_password_hash(new_secret)
     
-    # Safely clear foreign key references before delete in case of schema limitations
-    user.locations = []
     db.commit()
-    
-    # Delete old user first to avoid any conflicts (Neon/SQLite on delete cascade handling)
-    delete_user(db, user_code)
-    
-    existing = get_user_by_code(db, new_secret)
-    if existing:
-        existing.locations = []
-        db.commit()
-        delete_user(db, new_secret)
-        
-    new_user = create_user(
-        db,
-        code=new_secret,
-        name=old_name,
-        phone=old_phone,
-        is_admin=old_is_admin
-    )
-    
-    if loc_ids:
-        set_user_locations(db, new_secret, loc_ids)
-        
-    return new_user
+    db.refresh(user)
+    return user
 
 # Locations
 def get_locations(db: Session):
