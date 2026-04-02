@@ -24,6 +24,14 @@ class Settings(BaseSettings):
     
     # Admin
     ADMIN_BOOTSTRAP_CODE: Optional[str] = None
+    ADMIN_OTP_EMAIL: Optional[str] = None
+
+    # Email (Gmail SMTP)
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: Optional[str] = None
+    SMTP_PASSWORD: Optional[str] = None
+    SMTP_FROM_EMAIL: Optional[str] = None
     
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = []

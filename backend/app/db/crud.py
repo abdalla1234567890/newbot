@@ -49,6 +49,15 @@ def delete_user(db: Session, user_code: str):
         return True
     return False
 
+def reset_user_secret(db: Session, user_code: str, new_secret: str):
+    user = get_user_by_code(db, user_code)
+    if not user:
+        return None
+    user.secret_hash = get_password_hash(new_secret)
+    db.commit()
+    db.refresh(user)
+    return user
+
 # Locations
 def get_locations(db: Session):
     return db.query(models.Location).all()

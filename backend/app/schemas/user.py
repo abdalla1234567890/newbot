@@ -47,3 +47,13 @@ class User(UserBase):
 
 class LoginRequest(BaseModel):
     code: str
+
+class AdminOTPStartRequest(BaseModel):
+    code: str
+
+class AdminOTPVerifyRequest(BaseModel):
+    code: str
+    otp: str
+
+class ResetSecretRequest(BaseModel):
+    new_secret: str

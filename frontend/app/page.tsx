@@ -1,15 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 
 export default function Home() {
   const [code, setCode] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpRequired, setOtpRequired] = useState(false);
+  const [otpSecondsLeft, setOtpSecondsLeft] = useState(0);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showCode, setShowCode] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    if (!otpRequired || otpSecondsLeft <= 0) return;
+    const timer = setInterval(() => {
+      setOtpSecondsLeft((prev) => Math.max(prev - 1, 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [otpRequired, otpSecondsLeft]);
+
+  const formatOtpCountdown = (seconds: number) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+    const s = (seconds % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +46,48 @@ export default function Home() {
         router.push("/chat");
       }
     } catch (err: any) {
-      setError(`❌ ${err.message || "كود خاطئ. حاول مرة أخرى."}`);
+      if ((err.message || "").includes("Admin OTP required")) {
+        try {
+          await api.post("/admin/login/start", { code });
+          setOtpRequired(true);
+          setOtpSecondsLeft(300);
+          setError("تم إرسال كود التحقق إلى بريد الأدمن.");
+        } catch (otpErr: any) {
+          setError(`❌ ${otpErr.message || "فشل إرسال كود التحقق"}`);
+        }
+      } else {
+        setError(`❌ ${err.message || "كود خاطئ. حاول مرة أخرى."}`);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const data = await api.post("/admin/login/verify", { code, otp });
+      localStorage.setItem("token", data.access_token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      router.push("/admin");
+    } catch (err: any) {
+      setError(`❌ ${err.message || "كود التحقق غير صحيح"}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      await api.post("/admin/login/start", { code });
+      setOtpSecondsLeft(300);
+      setError("تم إعادة إرسال كود التحقق.");
+    } catch (err: any) {
+      setError(`❌ ${err.message || "فشل إعادة إرسال كود التحقق"}`);
     } finally {
       setLoading(false);
     }
@@ -46,7 +104,7 @@ export default function Home() {
           <p className="text-gray-300 font-medium">نظام إدارة طلبات مواد البناء</p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-6">
+        <form onSubmit={otpRequired ? handleVerifyOtp : handleLogin} className="space-y-6">
           <div className="relative">
             <div className="flex items-center gap-2 mb-3">
               <div className="p-2 bg-teal-500/20 rounded-lg">
@@ -55,16 +113,16 @@ export default function Home() {
                 </svg>
               </div>
               <label className="text-sm font-bold text-gray-200">
-                كود الدخول السري
+                {otpRequired ? "كود التحقق (OTP)" : "كود الدخول السري"}
               </label>
             </div>
             <div className="relative">
               <input
                 type={showCode ? "text" : "password"}
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
+                value={otpRequired ? otp : code}
+                onChange={(e) => otpRequired ? setOtp(e.target.value) : setCode(e.target.value)}
                 className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition pr-12"
-                placeholder="أدخل الكود السري"
+                placeholder={otpRequired ? "أدخل كود التحقق المرسل للإيميل" : "أدخل الكود السري"}
                 required
               />
               <button
@@ -91,14 +149,43 @@ export default function Home() {
               {error}
             </div>
           )}
+          {otpRequired && (
+            <div className="p-3 bg-teal-500/10 border border-teal-500/40 rounded-lg text-teal-200 text-sm">
+              مدة صلاحية الكود: {formatOtpCountdown(otpSecondsLeft)}
+            </div>
+          )}
 
           <button
             type="submit"
             disabled={loading}
             className="w-full py-3 bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 hover:to-teal-600 text-white font-semibold rounded-lg shadow-lg transform transition hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "جاري التحقق..." : "دخول"}
+            {loading ? "جاري التحقق..." : otpRequired ? "تأكيد OTP" : "دخول"}
           </button>
+          {otpRequired && (
+            <>
+              <button
+                type="button"
+                onClick={handleResendOtp}
+                disabled={loading}
+                className="w-full py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 rounded-lg transition disabled:opacity-50"
+              >
+                إعادة إرسال OTP
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setOtpRequired(false);
+                  setOtp("");
+                  setError("");
+                  setOtpSecondsLeft(0);
+                }}
+                className="w-full py-2 bg-white/10 hover:bg-white/20 text-gray-200 rounded-lg transition"
+              >
+                رجوع
+              </button>
+            </>
+          )}
         </form>
       </div>
     </div>

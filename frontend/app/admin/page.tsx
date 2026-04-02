@@ -97,6 +97,17 @@ export default function AdminPage() {
     }
   };
 
+  const handleResetUserSecret = async (code: string) => {
+    const newSecret = prompt("أدخل الكود السري الجديد للمستخدم (6 أحرف/أرقام على الأقل):");
+    if (!newSecret) return;
+    try {
+      await api.post(`/admin/users/${code}/reset-secret`, { new_secret: newSecret });
+      alert("✅ تم إعادة تعيين الكود السري بنجاح");
+    } catch (err: any) {
+      alert(err.message || "❌ فشل إعادة تعيين الكود السري");
+    }
+  };
+
   const handleUpdateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -411,6 +422,15 @@ export default function AdminPage() {
                                                     >
                                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                                             <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleResetUserSecret(user.code)}
+                                                        className="p-2 bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 rounded-lg transition-all"
+                                                        title="إعادة تعيين الكود السري"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path d="M8.257 3.099c.765-1.36 2.72-1.36 3.485 0l6.518 11.59c.75 1.334-.213 2.99-1.742 2.99H3.48c-1.53 0-2.492-1.656-1.743-2.99l6.52-11.59zM11 14a1 1 0 10-2 0 1 1 0 002 0zm-1-7a1 1 0 00-1 1v3a1 1 0 102 0V8a1 1 0 00-1-1z" />
                                                         </svg>
                                                     </button>
                                                     {user.name !== "Main Admin" && (
