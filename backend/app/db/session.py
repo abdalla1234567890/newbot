@@ -1,10 +1,18 @@
+import logging
+from pathlib import Path
+
 from sqlalchemy import event, create_engine
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import sessionmaker, declarative_base
+
 from app.core.config import settings
 
+logger = logging.getLogger(__name__)
+
 # Hybrid database engine setup
-SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL or f"sqlite:///./{settings.SQLITE_DB_NAME}"
+BACKEND_DIR = Path(__file__).resolve().parents[2]
+SQLITE_DB_PATH = BACKEND_DIR / settings.SQLITE_DB_NAME
+SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL or f"sqlite:///{SQLITE_DB_PATH.as_posix()}"
 
 # Special setup for SQLite to enable foreign keys
 if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
@@ -45,7 +53,7 @@ def ensure_schema():
     except Exception:
         # If migration fails, create_all will still work on fresh DBs.
         # Existing DBs might need manual migration depending on the engine.
-        pass
+        logger.exception("ensure_schema_failed")
 
 def get_db():
     db = SessionLocal()

@@ -365,7 +365,7 @@ export default function AdminPage() {
                                         placeholder={updateUser.field === "phone" ? "05XXXXXXXX" : updateUser.field === "secret" ? "\u0627\u0643\u062A\u0628 \u0627\u0644\u0643\u0648\u062F \u0627\u0644\u0633\u0631\u064A \u0627\u0644\u062C\u062F\u064A\u062F" : "\u0627\u0643\u062A\u0628 \u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u062C\u062F\u064A\u062F"}
                                         pattern={updateUser.field === "phone" ? "05[0-9]{8}" : undefined}
                                         maxLength={updateUser.field === "phone" ? 10 : undefined}
-                                        minLength={updateUser.field === "phone" ? 10 : updateUser.field === "secret" ? 8 : undefined}
+                                        minLength={updateUser.field === "phone" ? 10 : updateUser.field === "secret" ? 6 : undefined}
                                         inputMode={updateUser.field === "phone" ? "numeric" : "text"}
                                     />
                                 </div>

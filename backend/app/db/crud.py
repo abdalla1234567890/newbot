@@ -41,6 +41,27 @@ def update_user_field(db: Session, user_code: str, field: str, value: str):
     db.refresh(user)
     return user
 
+def update_user(db: Session, user_code: str, updates: dict):
+    user = get_user_by_code(db, user_code)
+    if not user:
+        return None
+
+    allowed_fields = {"name", "phone"}
+    applied = False
+
+    for field, value in updates.items():
+        if field not in allowed_fields:
+            continue
+        setattr(user, field, value)
+        applied = True
+
+    if not applied:
+        return False
+
+    db.commit()
+    db.refresh(user)
+    return user
+
 def delete_user(db: Session, user_code: str):
     user = get_user_by_code(db, user_code)
     if user:

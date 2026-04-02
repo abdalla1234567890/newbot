@@ -35,14 +35,20 @@ def update_user(
     db: Session = Depends(session.get_db),
     current_admin: models.User = Depends(deps.get_current_active_admin)
 ):
-    user = crud.get_user_by_code(db, user_code)
-    if not user:
+    update_data = user_in.dict(exclude_unset=True, exclude_none=True)
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No fields provided for update")
+
+    invalid_fields = sorted(set(update_data) - {"name", "phone"})
+    if invalid_fields:
+        raise HTTPException(status_code=400, detail=f"Invalid fields for update: {', '.join(invalid_fields)}")
+
+    user = crud.update_user(db, user_code, update_data)
+    if user is None:
         raise HTTPException(status_code=404, detail="User not found")
-    
-    # Update fields
-    for field, value in user_in.dict(exclude_unset=True).items():
-        crud.update_user_field(db, user_code, field, value)
-    
+    if user is False:
+        raise HTTPException(status_code=400, detail="No valid fields were updated")
+
     return user
 
 @router.delete("/users/{user_code}")
